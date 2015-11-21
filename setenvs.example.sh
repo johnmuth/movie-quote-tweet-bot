@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+export TWITTER_CONSUMER_KEY=''
+export TWITTER_CONSUMER_SECRET=''
+export TWITTER_ACCESS_TOKEN=''
+export TWITTER_ACCESS_TOKEN_SECRET=''
+
+export DATA_DIR_1=''
+#export DATA_DIR_2=''
+
+export TWEET_INTERVAL_MINUTES=1
