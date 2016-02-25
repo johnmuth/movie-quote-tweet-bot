@@ -1,0 +1,22 @@
+{
+  "name": "movie-quote-tweet-bot",
+  "version": "0.0.1",
+  "description": "tweets movies",
+  "main": "movie-quote-tweet-bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/johnmuth/movie-quote-tweet-bot.git"
+  },
+  "author": "John Muth",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/johnmuth/movie-quote-tweet-bot/issues"
+  },
+  "homepage": "https://github.com/johnmuth/movie-quote-tweet-bot",
+  "dependencies": {
+    "twit": "^2.1.1"
+  }
+}

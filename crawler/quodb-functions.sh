@@ -2,11 +2,11 @@
 
 function getQuotesJson() {
   set +u
-  if [ -z "$1" ] || [ -z "$2" ]; then
-    echo "{}"
-  else
-    curl -s http://api.quodb.com/quotes/$1/$2
+  local quoteId=$1
+  if [ -z "$quoteId" ]; then
+    quoteId=`getNewQuoteId`
   fi
+  curl -s http://api.quodb.com/quotes/"$MOVIE_ID"/"$quoteId"
   set -u
 }
 
@@ -30,7 +30,6 @@ function saveToFiles() {
             echo "$jsonString" | jq ".docs[]| select(.phrase_id==$quoteId)" > "$outputFile"
         fi
     done
-    echo ""
 }
 
 function getSearchResultsJson() {
@@ -81,19 +80,23 @@ function getLowestSavedQuoteId() {
   getSavedIds | sort | head -1
 }
 
+function getHighestSavedQuoteId() {
+  getSavedIds | sort | tail -1
+}
+
 function getNextQuoteId() {
   local quotesJson=$1
   local crawlDirection=$2
   if [ "$crawlDirection" == 'forward' ]; then
-    lastQuoteId=`getQuoteIds "$quotesJson" | tail -1`
-    if [ ! -z "$lastQuoteId" ]; then
-      echo $(( $lastQuoteId + 3 ))
+    highestQuoteId=`getQuoteIds "$quotesJson" | tail -1`
+    if [ ! -z "$highestQuoteId" ]; then
+      echo $(( $highestQuoteId + 3 ))
     fi
   fi
   if [ "$crawlDirection" == 'backward' ]; then
-    firstQuoteId=`getQuoteIds "$quotesJson" | head -1`
-    if [ ! -z "$firstQuoteId" ]; then
-      echo $(( $firstQuoteId - 3 ))
+    lowestQuoteId=`getQuoteIds "$quotesJson" | head -1`
+    if [ ! -z "$lowestQuoteId" ]; then
+      echo $(( $lowestQuoteId - 3 ))
     fi
   fi
 }

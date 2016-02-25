@@ -1,6 +1,11 @@
 var Twit = require('twit');
 var fs = require('fs');
-var intervalMilliseconds = process.env.TWEET_INTERVAL_MINUTES * 60 * 1000;
+var intervalMilliseconds = 0;
+if (process.env.TWEET_INTERVAL_MINUTES) {
+    intervalMilliseconds = process.env.TWEET_INTERVAL_MINUTES * 60 * 1000;
+} else if (process.env.TWEET_INTERVAL_SECONDS) {
+    intervalMilliseconds = process.env.TWEET_INTERVAL_SECONDS * 1000;
+}
 
 var T = new Twit({
     consumer_key: process.env.TWITTER_CONSUMER_KEY, 
@@ -8,47 +13,49 @@ var T = new Twit({
     access_token: process.env.TWITTER_ACCESS_TOKEN,
     access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
 });
-
-var dataDir1 = process.env.DATA_DIR_1.replace(/([^\/])$/, '$1\/');
-var dataDir2 = process.env.DATA_DIR_2.replace(/([^\/])$/, '$1\/');
-var nextDataDir = dataDir1;
+var dataDirs = JSON.parse(process.env.DATA_DIRS);
+var nextDataDirIndex = 0;
 var nextQuoteIndex = {};
-nextQuoteIndex[dataDir1] = 0;
-nextQuoteIndex[dataDir2] = 0;
+var quoteFiles = {};
+for (var i = 0; i < dataDirs.length; i++) {
+    nextQuoteIndex[i]=0;
+    quoteFiles[i] = fs.readdirSync(dataDirs[i]);
+}
+var nextQuoteFile = dataDirs[0] + '/' + quoteFiles[0][0];
 
 function tweetAQuote() {
-    var files = fs.readdirSync(nextDataDir);
-    var quoteJsonFile = nextDataDir + files[nextQuoteIndex[nextDataDir]];
-    var moviequote = require(quoteJsonFile);
-    console.log('About to tweet quote #' + nextQuoteIndex[nextDataDir] + ' from ' + nextDataDir + ' : ' + moviequote.phrase);
-    T.post('statuses/update', {status: moviequote.phrase}, function (err, reply) {
-        if (err) {
-            console.error("error: " + err);
-        }
-    });
+    var moviequote = require(nextQuoteFile);
+    console.log("About to tweet: ", moviequote.phrase);
+    if (process.env.DRY_RUN != 'true') {
+        T.post('statuses/update', {status: moviequote.phrase}, function (err, reply) {
+            if (err) {
+                console.error("error: ", err);
+            }
+        });
+    }
 }
 
-function incrementDataDir() {
-    nextQuoteIndex[nextDataDir] = nextQuoteIndex[nextDataDir] + 1;
-    if (fs.readdirSync(nextDataDir).length <= nextQuoteIndex[nextDataDir]) {
-        console.log('REACHED THE END, STARTING OVER, IN ' + nextDataDir);
-        nextQuoteIndex[nextDataDir]=0;
-    }
-    if (nextDataDir==dataDir1) {
-        nextDataDir=dataDir2;
+function incrementQuoteData() {
+    if (nextQuoteIndex[nextDataDirIndex] == quoteFiles[nextDataDirIndex].length - 1) {
+        nextQuoteIndex[nextDataDirIndex] = 0;
     } else {
-        nextDataDir=dataDir1;
+        nextQuoteIndex[nextDataDirIndex] = nextQuoteIndex[nextDataDirIndex] + 1;
     }
+    if (nextDataDirIndex==dataDirs.length - 1) {
+        nextDataDirIndex = 0;
+    } else {
+        nextDataDirIndex++;
+    }
+    nextQuoteFile = dataDirs[nextDataDirIndex] + '/' + quoteFiles[nextDataDirIndex][nextQuoteIndex[nextDataDirIndex]];
 }
 
 setInterval(function () {
     // wrapped in a try/catch in case Twitter is unresponsive, don't care about error it just won't tweet.
     try {
         tweetAQuote();
-        incrementDataDir();
+        incrementQuoteData();
     }
     catch (e) {
         console.log(e);
     }
 }, intervalMilliseconds);
-
